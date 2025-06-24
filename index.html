@@ -1,0 +1,1551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com https://text.pollinations.ai;
+        connect-src 'self' https://text.pollinations.ai https://image.pollinations.ai;
+        frame-src 'self' https://www.youtube.com https://trytako.com;
+        child-src 'self';
+        manifest-src 'self';
+        worker-src 'self';
+        upgrade-insecure-requests;
+        block-all-mixed-content;">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mindspark</title>
+    <link rel="icon" type="image/x-icon" href="icon.png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: #2a2a2a;
+            border-bottom: 1px solid #444;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 1000;
+            gap: 12px;
+        }
+
+        .logo {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffa500;
+            flex-shrink: 0;
+            width: 100px;
+        }
+
+        .ai-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .ai-input-header {
+            flex: 1;
+            max-width: calc(100vw - 480px); /* Adaptive width: total width minus logo, buttons, gaps, and padding */
+            min-width: 200px;
+            padding: 8px 12px;
+            border: 1px solid #555;
+            border-radius: 6px;
+            background: #3a3a3a;
+            color: #e0e0e0;
+            font-size: 13px;
+            height: 34px;
+        }
+
+        .ai-input-header:focus {
+            outline: none;
+            border-color: #ffa500;
+        }
+
+        .ai-input-header::placeholder {
+            color: #999;
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            border: 1px solid #555;
+            border-radius: 6px;
+            background: #3a3a3a;
+            color: #e0e0e0;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .btn:hover {
+            background: #4a4a4a;
+            border-color: #ffa500;
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .generate-btn {
+            background: #ffa500;
+            color: #1a1a1a;
+            font-weight: bold;
+            border-color: #ffa500;
+            min-width: 80px;
+        }
+
+        .generate-btn:hover {
+            background: #ff8c00;
+            border-color: #ff8c00;
+        }
+
+        .loading-indicator {
+            color: #ffa500;
+            font-size: 12px;
+            font-style: italic;
+            display: none;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        /* Updated Sidebar Styles */
+        .sidebar {
+            position: fixed;
+            top: 60px;
+            right: 0;
+            width: 350px;
+            height: calc(100vh - 60px);
+            background: linear-gradient(135deg, #2a2a2a 0%, #252525 100%);
+            border-left: 1px solid #444;
+            padding: 0;
+            transform: translateX(100%);
+            transition: transform 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+            overflow-y: auto;
+            z-index: 999;
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .sidebar.open {
+            transform: translateX(0);
+        }
+
+        .sidebar-header {
+            padding: 20px 24px 16px;
+            border-bottom: 1px solid #444;
+            background: rgba(255, 165, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .sidebar-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #ffa500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sidebar-content {
+            padding: 24px;
+        }
+
+        .sidebar-section {
+            margin-bottom: 28px;
+        }
+
+        .sidebar-section h4 {
+            margin-bottom: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #ffa500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .sidebar input, .sidebar textarea, .sidebar select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #444;
+            border-radius: 8px;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            margin-bottom: 16px;
+            font-size: 14px;
+            resize: vertical;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar input:focus, .sidebar textarea:focus, .sidebar select:focus {
+            outline: none;
+            border-color: #ffa500;
+            box-shadow: 0 0 0 3px rgba(255, 165, 0, 0.1);
+        }
+
+        .color-picker, .shape-picker {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .color-option {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .color-option.selected {
+            border-color: #ffa500;
+            transform: scale(1.1);
+            box-shadow: 0 0 0 3px rgba(255, 165, 0, 0.3);
+        }
+
+        .shape-option {
+            width: 45px;
+            height: 45px;
+            border: 2px solid #444;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            font-size: 16px;
+            background: #1a1a1a;
+            border-radius: 8px;
+        }
+
+        .shape-option:hover {
+            border-color: #ffa500;
+            background: #2a2a2a;
+            transform: translateY(-2px);
+        }
+
+        .shape-option.selected {
+            border-color: #ffa500;
+            background: #2a2a2a;
+            box-shadow: 0 0 0 3px rgba(255, 165, 0, 0.1);
+        }
+
+        .slider-container {
+            margin-bottom: 20px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: #ccc;
+        }
+
+        .slider-value {
+            color: #ffa500;
+            font-weight: 500;
+        }
+
+        .slider {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #444;
+            outline: none;
+            -webkit-appearance: none;
+            transition: background 0.3s ease;
+        }
+
+        .slider:hover {
+            background: #555;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ffa500;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(255, 165, 0, 0.4);
+        }
+
+        .delete-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #d63031, #c0392b);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 24px;
+        }
+
+        .delete-btn:hover {
+            background: linear-gradient(135deg, #e55656, #d63031);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(214, 48, 49, 0.3);
+        }
+
+        /* Usage Sidebar Styles */
+        .usage-sidebar {
+            position: fixed;
+            top: 60px;
+            left: 0;
+            width: 380px;
+            height: calc(100vh - 60px);
+            background: linear-gradient(135deg, #2a2a2a 0%, #252525 100%);
+            border-right: 1px solid #444;
+            transform: translateX(-100%);
+            transition: transform 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+            overflow-y: auto;
+            z-index: 999;
+            box-shadow: 10px 0 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .usage-sidebar.open {
+            transform: translateX(0);
+        }
+
+        .usage-content {
+            padding: 24px;
+        }
+
+        .usage-section {
+            margin-bottom: 32px;
+        }
+
+        .usage-section h3 {
+            color: #ffa500;
+            margin-bottom: 16px;
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .usage-section h4 {
+            color: #ffa500;
+            margin-bottom: 12px;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .controls-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .controls-list li {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #333;
+        }
+
+        .controls-list li:last-child {
+            border-bottom: none;
+        }
+
+        .control-icon {
+            font-size: 16px;
+            margin-right: 12px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .control-key {
+            font-weight: 600;
+            color: #ffa500;
+            min-width: 120px;
+            margin-right: 8px;
+        }
+
+        .control-desc {
+            color: #ccc;
+            flex: 1;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            padding: 6px 0;
+            color: #ccc;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .feature-list li::before {
+            content: "▸";
+            color: #ffa500;
+            font-weight: bold;
+            margin-top: 2px;
+        }
+
+        .website-link {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: white;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-block;
+            padding: 12px 24px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            margin-top: 16px;
+        }
+
+        .website-link:hover {
+            background: linear-gradient(135deg, #5de0d7, #4ecdc4);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(78, 205, 196, 0.3);
+        }
+
+        .canvas-container {
+            position: fixed;
+            top: 60px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+
+        .instructions {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(42, 42, 42, 0.95);
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 12px;
+            border: 1px solid #444;
+            max-width: 300px;
+            backdrop-filter: blur(10px);
+        }
+
+        .instructions h4 {
+            color: #ffa500;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .instructions ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .instructions li {
+            margin-bottom: 4px;
+            color: #ccc;
+        }
+
+        /* Overlay for click-outside functionality */
+        .sidebar-overlay {
+            position: fixed;
+            top: 60px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 998;
+            backdrop-filter: blur(2px);
+        }
+
+        .sidebar-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .ai-input-header {
+                max-width: calc(100vw - 420px);
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .ai-input-header {
+                max-width: calc(100vw - 380px);
+                min-width: 150px;
+                font-size: 12px;
+            }
+            
+            .btn {
+                padding: 5px 8px;
+                font-size: 11px;
+            }
+            
+            .generate-btn {
+                min-width: 70px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-wrap: wrap;
+                height: auto;
+                min-height: 60px;
+                padding: 10px;
+                gap: 8px;
+            }
+            
+            .logo {
+                font-size: 16px;
+                width: 80px;
+            }
+            
+            .ai-section {
+                order: 3;
+                width: 100%;
+                margin-top: 10px;
+            }
+            
+            .ai-input-header {
+                max-width: none;
+                min-width: 0;
+                flex: 1;
+            }
+            
+            .controls {
+                flex-wrap: wrap;
+                gap: 5px;
+            }
+            
+            .btn {
+                padding: 5px 8px;
+                font-size: 11px;
+            }
+            
+            .generate-btn {
+                min-width: 60px;
+            }
+            
+            .sidebar, .usage-sidebar {
+                width: 100%;
+            }
+            
+            .instructions {
+                display: none;
+            }
+            
+            .canvas-container {
+                top: 80px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                padding: 8px;
+                gap: 6px;
+            }
+            
+            .logo {
+                font-size: 14px;
+                width: 70px;
+            }
+            
+            .ai-input-header {
+                font-size: 11px;
+                padding: 6px 8px;
+                height: 30px;
+            }
+            
+            .btn {
+                padding: 4px 6px;
+                font-size: 10px;
+            }
+            
+            .generate-btn {
+                min-width: 50px;
+            }
+            
+            .loading-indicator {
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">Mindspark</div>
+        
+        <div class="ai-section">
+            <input type="text" class="ai-input-header" id="aiPromptHeader" placeholder="Describe your mindmap idea...">
+            <button class="btn generate-btn" id="generateBtnHeader">Generate</button>
+            <div class="loading-indicator" id="aiLoadingHeader">Generating...</div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn" id="addNodeBtn">Add</button>
+            <button class="btn" id="propertiesBtn">Props</button>
+            <button class="btn" id="importBtn">Import</button>
+            <button class="btn" id="exportBtn">Export</button>
+            <button class="btn" id="resetViewBtn">Reset</button>
+            <button class="btn" id="usageBtn">Guide</button>
+        </div>
+    </div>
+
+    <div class="canvas-container">
+        <div id="p5-container"></div>
+    </div>
+
+    <input type="file" id="importFile" class="file-input" accept=".json">
+
+    <!-- Overlay for click-outside functionality -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Properties Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3>⚙️ Node Properties</h3>
+        </div>
+        <div class="sidebar-content">
+            <div class="sidebar-section">
+                <h4>Content</h4>
+                <input type="text" id="nodeText" placeholder="Node text">
+                <textarea id="nodeDescription" placeholder="Description" rows="3"></textarea>
+            </div>
+            
+            <div class="sidebar-section">
+                <h4>Border Color</h4>
+                <div class="color-picker" id="borderColorPicker">
+                    <div class="color-option" style="background: #ffa500" data-color="#ffa500"></div>
+                    <div class="color-option" style="background: #ff6b6b" data-color="#ff6b6b"></div>
+                    <div class="color-option" style="background: #4ecdc4" data-color="#4ecdc4"></div>
+                    <div class="color-option" style="background: #45b7d1" data-color="#45b7d1"></div>
+                    <div class="color-option" style="background: #96ceb4" data-color="#96ceb4"></div>
+                    <div class="color-option" style="background: #feca57" data-color="#feca57"></div>
+                    <div class="color-option" style="background: #ff9ff3" data-color="#ff9ff3"></div>
+                    <div class="color-option" style="background: #54a0ff" data-color="#54a0ff"></div>
+                    <div class="color-option" style="background: #ffffff" data-color="#ffffff"></div>
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <h4>Node Shape</h4>
+                <div class="shape-picker">
+                    <div class="shape-option circle" data-shape="circle">
+                        <span>●</span>
+                    </div>
+                    <div class="shape-option rectangle" data-shape="rectangle">
+                        <span>■</span>
+                    </div>
+                    <div class="shape-option diamond" data-shape="diamond">
+                        <span>◆</span>
+                    </div>
+                    <div class="shape-option hexagon" data-shape="hexagon">
+                        <span>⬡</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <h4>Node Size</h4>
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Size</span>
+                        <span class="slider-value"><span id="sizeValue">60</span>px</span>
+                    </div>
+                    <input type="range" id="sizeSlider" class="slider" min="40" max="120" value="60">
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <h4>Border Width</h4>
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Width</span>
+                        <span class="slider-value"><span id="borderWidthValue">2</span>px</span>
+                    </div>
+                    <input type="range" id="borderWidthSlider" class="slider" min="1" max="8" value="2">
+                </div>
+            </div>
+            
+            <button class="delete-btn" id="deleteNodeBtn">🗑️ Delete Node</button>
+        </div>
+    </div>
+
+    <!-- Usage Sidebar -->
+    <div class="usage-sidebar" id="usageSidebar">
+        <div class="sidebar-header">
+            <h3>📖 Usage Guide</h3>
+        </div>
+        <div class="usage-content">
+            <div class="usage-section">
+                <h4>🖱️ Mouse Controls</h4>
+                <ul class="controls-list">
+                    <li>
+                        <span class="control-icon">🖱️</span>
+                        <span class="control-key">Click</span>
+                        <span class="control-desc">Select node</span>
+                    </li>
+                    <li>
+                        <span class="control-icon">🖱️</span>
+                        <span class="control-key">Double-click</span>
+                        <span class="control-desc">Edit text</span>
+                    </li>
+                    <li>
+                        <span class="control-icon">🖱️</span>
+                        <span class="control-key">Drag</span>
+                        <span class="control-desc">Move node</span>
+                    </li>
+                    <li>
+                        <span class="control-icon">🖱️</span>
+                        <span class="control-key">Right-click</span>
+                        <span class="control-desc">Add child node</span>
+                    </li>
+                    <li>
+                        <span class="control-icon">🖱️</span>
+                        <span class="control-key">Wheel</span>
+                        <span class="control-desc">Zoom in/out</span>
+                    </li>
+                    <li>
+                        <span class="control-icon">🖱️</span>
+                        <span class="control-key">Drag background</span>
+                        <span class="control-desc">Pan view</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="usage-section">
+                <h4>⌨️ Keyboard Shortcuts</h4>
+                <ul class="controls-list">
+                    <li>
+                        <span class="control-icon">⌨️</span>
+                        <span class="control-key">Space</span>
+                        <span class="control-desc">Add child to selected</span>
+                    </li>
+                    <li>
+                        <span class="control-icon">⌨️</span>
+                        <span class="control-key">Delete</span>
+                        <span class="control-desc">Remove selected node</span>
+                    </li>
+                    <li>
+                        <span class="control-icon">⌨️</span>
+                        <span class="control-key">Enter</span>
+                        <span class="control-desc">Finish editing</span>
+                    </li>
+                    <li>
+                        <span class="control-icon">⌨️</span>
+                        <span class="control-key">Escape</span>
+                        <span class="control-desc">Cancel editing</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="usage-section">
+                <h4>✨ Features</h4>
+                <ul class="feature-list">
+                    <li>Customize nodes with colors, shapes, and sizes</li>
+                    <li>Save and load mindmaps as JSON files</li>
+                    <li>Generate mindmaps using AI prompts</li>
+                    <li>Interactive zoom and pan functionality</li>
+                    <li>Real-time node editing and organization</li>
+                    <li>Responsive design for all devices</li>
+                </ul>
+            </div>
+
+            <div class="usage-section">
+                <h4>ℹ️ About</h4>
+                <p style="margin-bottom: 15px; color: #ccc; line-height: 1.5;">
+                    Mindspark is a powerful, interactive mindmapping tool that helps you visualize and organize your ideas. Create beautiful, connected diagrams that represent your thoughts and concepts with ease.
+                </p>
+                
+                <a href="https://aeromechanic.fun" target="_blank" class="website-link">
+                    🌐 Visit aeromechanic.fun
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let nodes = [];
+        let selectedNode = null;
+        let draggedNode = null;
+        let isDragging = false;
+        let nodeIdCounter = 0;
+        let camera = { x: 0, y: 0, zoom: 1 };
+        let targetCamera = { x: 0, y: 0, zoom: 1 };
+        let sidebarOpen = false;
+        let usageSidebarOpen = false;
+        let editingNode = null;
+        let editInput = '';
+        let animationTime = 0;
+        let isInteractingWithSidebar = false;
+
+        // Node colors and settings
+        const colors = {
+            nodeBackground: 'rgba(128, 128, 128, 0.3)',
+            text: '#ffffff',
+            connection: '#666666',
+            background: '#1a1a1a'
+        };
+
+        function setup() {
+            let canvas = createCanvas(windowWidth, windowHeight - 60);
+            canvas.parent('p5-container');
+            
+            const canvasHeight = windowHeight - 60;
+            // Move central idea to the left of center
+            const rootNode = createNode('Central Idea', windowWidth/3, canvasHeight/2, true);
+            nodes.push(rootNode);
+            
+            setupEventListeners();
+            
+            canvas.canvas.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                return false;
+            });
+        }
+
+        function draw() {
+            background(colors.background);
+            
+            camera.x = lerp(camera.x, targetCamera.x, 0.1);
+            camera.y = lerp(camera.y, targetCamera.y, 0.1);
+            camera.zoom = lerp(camera.zoom, targetCamera.zoom, 0.1);
+            
+            push();
+            translate(width/2, height/2);
+            scale(camera.zoom);
+            translate(-width/2 + camera.x, -height/2 + camera.y);
+            
+            animationTime += 0.02;
+            
+            drawConnections();
+            drawNodes();
+            
+            pop();
+            
+            drawZoomIndicator();
+        }
+
+        function createNode(text, x, y, isRoot = false) {
+            return {
+                id: nodeIdCounter++,
+                text: text,
+                description: '',
+                x: x,
+                y: y,
+                isRoot: isRoot,
+                borderColor: isRoot ? '#ffa500' : '#4ecdc4',
+                shape: 'circle',
+                size: isRoot ? 80 : 60,
+                borderWidth: 2,
+                children: [],
+                parent: null,
+                targetX: x,
+                targetY: y,
+                targetSize: isRoot ? 80 : 60
+            };
+        }
+
+        function drawNodes() {
+            nodes.forEach(node => {
+                node.x = lerp(node.x, node.targetX, 0.15);
+                node.y = lerp(node.y, node.targetY, 0.15);
+                node.size = lerp(node.size, node.targetSize, 0.15);
+                
+                let isSelected = selectedNode && selectedNode.id === node.id;
+                let isEditing = editingNode && editingNode.id === node.id;
+                
+                if (isSelected) {
+                    for(let r = node.size + 20; r > node.size; r -= 5) {
+                        let alpha = map(r, node.size, node.size + 20, 255, 0);
+                        let glowColor = color(node.borderColor);
+                        fill(red(glowColor), green(glowColor), blue(glowColor), alpha * 0.3);
+                        noStroke();
+                        drawShape(node.x, node.y, r, node.shape);
+                    }
+                }
+                
+                fill(colors.nodeBackground);
+                
+                if (isEditing) {
+                    stroke(node.borderColor);
+                    strokeWeight(node.borderWidth + 2);
+                } else if (isSelected) {
+                    stroke(node.borderColor);
+                    strokeWeight(node.borderWidth + 1);
+                } else {
+                    stroke(node.borderColor);
+                    strokeWeight(node.borderWidth);
+                }
+                
+                let size = node.size;
+                if (node.isRoot) {
+                    size += sin(animationTime * 2) * 2;
+                }
+                
+                drawShape(node.x, node.y, size, node.shape);
+                
+                fill(colors.text);
+                noStroke();
+                textAlign(CENTER, CENTER);
+                textSize(node.isRoot ? 16 : 12);
+                textStyle(node.isRoot ? BOLD : NORMAL);
+                
+                if (isEditing) {
+                    text(editInput + (frameCount % 60 < 30 ? '|' : ''), node.x, node.y);
+                } else {
+                    let words = node.text.split(' ');
+                    let lines = [];
+                    let currentLine = '';
+                    let maxWidth = node.size - 20;
+                    
+                    words.forEach(word => {
+                        let testLine = currentLine + (currentLine ? ' ' : '') + word;
+                        if (textWidth(testLine) > maxWidth) {
+                            if (currentLine) lines.push(currentLine);
+                            currentLine = word;
+                        } else {
+                            currentLine = testLine;
+                        }
+                    });
+                    if (currentLine) lines.push(currentLine);
+                    
+                    lines.forEach((line, i) => {
+                        text(line, node.x, node.y + (i - (lines.length-1)/2) * 15);
+                    });
+                }
+            });
+        }
+
+        function drawShape(x, y, size, shape) {
+            switch(shape) {
+                case 'circle':
+                    ellipse(x, y, size);
+                    break;
+                case 'rectangle':
+                    rectMode(CENTER);
+                    rect(x, y, size * 0.8, size * 0.6);
+                    break;
+                case 'diamond':
+                    push();
+                    translate(x, y);
+                    rotate(PI/4);
+                    rectMode(CENTER);
+                    rect(0, 0, size * 0.6, size * 0.6);
+                    pop();
+                    break;
+                case 'hexagon':
+                    drawHexagon(x, y, size * 0.4);
+                    break;
+            }
+        }
+
+        function drawHexagon(x, y, radius) {
+            beginShape();
+            for (let i = 0; i < 6; i++) {
+                let angle = TWO_PI / 6 * i;
+                let vx = x + cos(angle) * radius;
+                let vy = y + sin(angle) * radius;
+                vertex(vx, vy);
+            }
+            endShape(CLOSE);
+        }
+
+        function drawConnections() {
+            stroke(colors.connection);
+            strokeWeight(2);
+            noFill();
+            
+            nodes.forEach(node => {
+                if (node.parent) {
+                    let parent = nodes.find(n => n.id === node.parent);
+                    if (parent) {
+                        let dx = node.x - parent.x;
+                        let dy = node.y - parent.y;
+                        let curve = dist(parent.x, parent.y, node.x, node.y) * 0.3;
+                        
+                        let offset = sin(animationTime + node.id * 0.5) * 2;
+                        
+                        bezier(
+                            parent.x, parent.y,
+                            parent.x + dx * 0.3, parent.y + offset,
+                            node.x - dx * 0.3, node.y - offset,
+                            node.x, node.y
+                        );
+                    }
+                }
+            });
+        }
+
+        function drawZoomIndicator() {
+            fill(255, 150);
+            noStroke();
+            textAlign(RIGHT, BOTTOM);
+            textSize(12);
+            text(`Zoom: ${(camera.zoom * 100).toFixed(0)}%`, width - 20, height - 20);
+        }
+
+        function mousePressed() {
+            if (mouseY < 60 || isInteractingWithSidebar) return;
+            
+            let worldMouse = screenToWorld(mouseX, mouseY);
+            let clickedNode = getNodeAt(worldMouse.x, worldMouse.y);
+            
+            if (mouseButton === RIGHT) {
+                if (clickedNode) {
+                    selectedNode = clickedNode;
+                    addChildNode();
+                }
+                return false;
+            }
+            
+            if (clickedNode) {
+                selectedNode = clickedNode;
+                draggedNode = clickedNode;
+                isDragging = true;
+                updateSidebar();
+                
+                if (millis() - (clickedNode.lastClick || 0) < 300) {
+                    startEditing(clickedNode);
+                }
+                clickedNode.lastClick = millis();
+            } else {
+                selectedNode = null;
+                editingNode = null;
+                updateSidebar();
+            }
+        }
+
+        function mouseDragged() {
+            if (mouseY < 60 || isInteractingWithSidebar) return;
+            
+            if (isDragging && draggedNode) {
+                let worldMouse = screenToWorld(mouseX, mouseY);
+                draggedNode.targetX = worldMouse.x;
+                draggedNode.targetY = worldMouse.y;
+            } else if (!draggedNode) {
+                targetCamera.x += (mouseX - pmouseX) / camera.zoom;
+                targetCamera.y += (mouseY - pmouseY) / camera.zoom;
+            }
+        }
+
+        function mouseReleased() {
+            isDragging = false;
+            draggedNode = null;
+        }
+
+        function mouseWheel(event) {
+            if (mouseY < 60 || isInteractingWithSidebar) return;
+            
+            let zoomFactor = event.delta > 0 ? 0.9 : 1.1;
+            let newZoom = constrain(targetCamera.zoom * zoomFactor, 0.3, 3);
+            
+            let worldMouse = screenToWorld(mouseX, mouseY);
+            targetCamera.x -= (worldMouse.x - width/2) * (newZoom - targetCamera.zoom) / newZoom;
+            targetCamera.y -= (worldMouse.y - height/2) * (newZoom - targetCamera.zoom) / newZoom;
+            targetCamera.zoom = newZoom;
+        }
+
+        function keyPressed() {
+            if (editingNode) {
+                if (keyCode === ENTER) {
+                    finishEditing();
+                } else if (keyCode === ESCAPE) {
+                    cancelEditing();
+                } else if (keyCode === BACKSPACE) {
+                    editInput = editInput.slice(0, -1);
+                }
+                return;
+            }
+            
+            if (keyCode === 32) {
+                addChildNode();
+            } else if (keyCode === DELETE || keyCode === BACKSPACE) {
+                deleteNode();
+            }
+        }
+
+        function keyTyped() {
+            if (editingNode && key !== '\n' && key !== '\b') {
+                editInput += key;
+            }
+        }
+
+        function getNodeAt(x, y) {
+            for (let node of nodes) {
+                let distance = dist(x, y, node.x, node.y);
+                let threshold = node.shape === 'rectangle' ? node.size * 0.5 : node.size / 2;
+                if (distance < threshold) {
+                    return node;
+                }
+            }
+            return null;
+        }
+
+        function screenToWorld(screenX, screenY) {
+            return {
+                x: (screenX - width/2) / camera.zoom + width/2 - camera.x,
+                y: (screenY - height/2) / camera.zoom + height/2 - camera.y
+            };
+        }
+
+        function startEditing(node) {
+            editingNode = node;
+            editInput = node.text;
+        }
+
+        function finishEditing() {
+            if (editingNode) {
+                editingNode.text = editInput || 'New Node';
+                editingNode = null;
+                editInput = '';
+                updateSidebar();
+            }
+        }
+
+        function cancelEditing() {
+            editingNode = null;
+            editInput = '';
+        }
+
+        function addChildNode() {
+            if (!selectedNode) {
+                selectedNode = nodes.find(n => n.isRoot);
+                if (!selectedNode) return;
+            }
+            
+            let angle = selectedNode.children.length * (PI * 2 / max(selectedNode.children.length + 1, 3));
+            let distance = 150;
+            let newX = selectedNode.x + cos(angle) * distance;
+            let newY = selectedNode.y + sin(angle) * distance;
+            
+            let newNode = createNode('New Node', newX, newY);
+            newNode.parent = selectedNode.id;
+            selectedNode.children.push(newNode.id);
+            
+            nodes.push(newNode);
+            selectedNode = newNode;
+            updateSidebar();
+        }
+
+        function deleteNode() {
+            if (!selectedNode || selectedNode.isRoot) return;
+            
+            if (selectedNode.parent) {
+                let parent = nodes.find(n => n.id === selectedNode.parent);
+                if (parent) {
+                    parent.children = parent.children.filter(id => id !== selectedNode.id);
+                }
+            }
+            
+            removeNodeAndChildren(selectedNode.id);
+            selectedNode = null;
+            updateSidebar();
+        }
+
+        function removeNodeAndChildren(nodeId) {
+            let node = nodes.find(n => n.id === nodeId);
+            if (node) {
+                node.children.forEach(childId => removeNodeAndChildren(childId));
+                nodes = nodes.filter(n => n.id !== nodeId);
+            }
+        }
+
+        function toggleSidebar() {
+            sidebarOpen = !sidebarOpen;
+            document.getElementById('sidebar').classList.toggle('open', sidebarOpen);
+            document.getElementById('sidebarOverlay').classList.toggle('visible', sidebarOpen || usageSidebarOpen);
+            
+            if (sidebarOpen && usageSidebarOpen) {
+                usageSidebarOpen = false;
+                document.getElementById('usageSidebar').classList.remove('open');
+            }
+        }
+
+        function toggleUsageSidebar() {
+            usageSidebarOpen = !usageSidebarOpen;
+            document.getElementById('usageSidebar').classList.toggle('open', usageSidebarOpen);
+            document.getElementById('sidebarOverlay').classList.toggle('visible', sidebarOpen || usageSidebarOpen);
+            
+            if (usageSidebarOpen && sidebarOpen) {
+                sidebarOpen = false;
+                document.getElementById('sidebar').classList.remove('open');
+            }
+        }
+
+        function closeSidebars() {
+            sidebarOpen = false;
+            usageSidebarOpen = false;
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('usageSidebar').classList.remove('open');
+            document.getElementById('sidebarOverlay').classList.remove('visible');
+        }
+
+        function updateSidebar() {
+            if (selectedNode) {
+                document.getElementById('nodeText').value = selectedNode.text;
+                document.getElementById('nodeDescription').value = selectedNode.description;
+                document.getElementById('sizeSlider').value = selectedNode.targetSize;
+                document.getElementById('sizeValue').textContent = selectedNode.targetSize;
+                document.getElementById('borderWidthSlider').value = selectedNode.borderWidth;
+                document.getElementById('borderWidthValue').textContent = selectedNode.borderWidth;
+                
+                document.querySelectorAll('.color-option').forEach(el => {
+                    el.classList.toggle('selected', el.dataset.color === selectedNode.borderColor);
+                });
+                
+                document.querySelectorAll('.shape-option').forEach(el => {
+                    el.classList.toggle('selected', el.dataset.shape === selectedNode.shape);
+                });
+            }
+        }
+
+        function resetView() {
+            targetCamera = { x: 0, y: 0, zoom: 1 };
+        }
+
+        function exportMindmap() {
+            let data = {
+                nodes: nodes,
+                timestamp: new Date().toISOString(),
+                version: "2.0"
+            };
+            
+            let blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            let url = URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.href = url;
+            a.download = 'mindmap.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importMindmap(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    if (data.nodes && Array.isArray(data.nodes)) {
+                        nodes = data.nodes.map(node => ({
+                            ...node,
+                            targetX: node.x,
+                            targetY: node.y,
+                            targetSize: node.size || 60,
+                            borderColor: node.borderColor || '#4ecdc4',
+                            shape: node.shape || 'circle',
+                            borderWidth: node.borderWidth || 2
+                        }));
+                        
+                        nodeIdCounter = Math.max(...nodes.map(n => n.id)) + 1;
+                        selectedNode = null;
+                        updateSidebar();
+                        resetView();
+                        
+                        alert('Mindmap imported successfully!');
+                    } else {
+                        alert('Invalid mindmap file format.');
+                    }
+                } catch (error) {
+                    alert('Error importing mindmap: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+            
+            event.target.value = '';
+        }
+
+        async function generateMindmap(promptSource = 'header') {
+            let prompt;
+            let generateBtn, loading;
+            
+            if (promptSource === 'header') {
+                prompt = document.getElementById('aiPromptHeader').value.trim();
+                generateBtn = document.getElementById('generateBtnHeader');
+                loading = document.getElementById('aiLoadingHeader');
+            } else {
+                prompt = document.getElementById('aiPrompt').value.trim();
+                generateBtn = document.getElementById('generateBtn');
+                loading = document.getElementById('aiLoading');
+            }
+            
+            if (!prompt) {
+                alert('Please enter a description for your mindmap.');
+                return;
+            }
+
+            // Check if there are existing nodes (more than just the root)
+            if (nodes.length > 1) {
+                const shouldExport = confirm('You have an existing mindmap. Would you like to export it before generating a new one?');
+                if (shouldExport) {
+                    exportMindmap();
+                }
+            }
+            
+            generateBtn.disabled = true;
+            loading.style.display = promptSource === 'header' ? 'inline' : 'block';
+
+            try {
+                const fullPrompt = `Create a mindmap structure in JSON format based on this description: "${prompt}". 
+                
+                Return ONLY a JSON object with this exact structure:
+                {
+                    "centerNode": "Main Topic Title",
+                    "branches": [
+                        {
+                            "title": "Branch 1 Title",
+                            "children": ["Subtopic 1", "Subtopic 2", "Subtopic 3"]
+                        },
+                        {
+                            "title": "Branch 2 Title", 
+                            "children": ["Subtopic A", "Subtopic B"]
+                        }
+                    ]
+                }
+                
+                Make it comprehensive with 3-6 main branches, each having 2-5 children. Keep titles concise (1-4 words).`;
+
+                const response = await fetch(`https://text.pollinations.ai/${encodeURIComponent(fullPrompt)}`);
+                const textResponse = await response.text();
+                
+                // Try to extract JSON from the response
+                let jsonData;
+                try {
+                    // Look for JSON object in the response
+                    const jsonMatch = textResponse.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) {
+                        jsonData = JSON.parse(jsonMatch[0]);
+                    } else {
+                        throw new Error('No JSON found in response');
+                    }
+                } catch (parseError) {
+                    throw new Error('Failed to parse AI response as JSON');
+                }
+
+                // Clear existing nodes
+                nodes = [];
+                nodeIdCounter = 0;
+                selectedNode = null;
+
+                // Create the mindmap from AI response
+                const canvasHeight = windowHeight - 60;
+                const centerX = windowWidth / 3; // Position to the left of center
+                const centerY = canvasHeight / 2;
+
+                // Create root node
+                const rootNode = createNode(jsonData.centerNode || 'Main Topic', centerX, centerY, true);
+                nodes.push(rootNode);
+
+                // Create branch nodes
+                if (jsonData.branches && Array.isArray(jsonData.branches)) {
+                    jsonData.branches.forEach((branch, branchIndex) => {
+                        const branchAngle = (branchIndex / jsonData.branches.length) * TWO_PI;
+                        const branchDistance = 200;
+                        const branchX = centerX + cos(branchAngle) * branchDistance;
+                        const branchY = centerY + sin(branchAngle) * branchDistance;
+
+                        // Create branch node
+                        const branchNode = createNode(branch.title, branchX, branchY);
+                        branchNode.parent = rootNode.id;
+                        branchNode.borderColor = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3'][branchIndex % 6];
+                        rootNode.children.push(branchNode.id);
+                        nodes.push(branchNode);
+
+                        // Create child nodes
+                        if (branch.children && Array.isArray(branch.children)) {
+                            branch.children.forEach((child, childIndex) => {
+                                const childAngle = branchAngle + (childIndex - (branch.children.length - 1) / 2) * 0.5;
+                                const childDistance = 150;
+                                const childX = branchX + cos(childAngle) * childDistance;
+                                const childY = branchY + sin(childAngle) * childDistance;
+
+                                const childNode = createNode(child, childX, childY);
+                                childNode.parent = branchNode.id;
+                                childNode.borderColor = branchNode.borderColor;
+                                childNode.size = 50;
+                                childNode.targetSize = 50;
+                                branchNode.children.push(childNode.id);
+                                nodes.push(childNode);
+                            });
+                        }
+                    });
+                }
+
+                resetView();
+                updateSidebar();
+                
+                if (promptSource === 'header') {
+                    document.getElementById('aiPromptHeader').value = '';
+                }
+                
+                alert('Mindmap generated successfully!');
+
+            } catch (error) {
+                console.error('Error generating mindmap:', error);
+                alert('Failed to generate mindmap. Please try again with a different description.');
+            } finally {
+                generateBtn.disabled = false;
+                loading.style.display = 'none';
+            }
+        }
+
+        function setupEventListeners() {
+            // Button event listeners
+            document.getElementById('addNodeBtn').addEventListener('click', addChildNode);
+            document.getElementById('propertiesBtn').addEventListener('click', toggleSidebar);
+            document.getElementById('usageBtn').addEventListener('click', toggleUsageSidebar);
+            document.getElementById('importBtn').addEventListener('click', () => {
+                document.getElementById('importFile').click();
+            });
+            document.getElementById('exportBtn').addEventListener('click', exportMindmap);
+            document.getElementById('resetViewBtn').addEventListener('click', resetView);
+            document.getElementById('deleteNodeBtn').addEventListener('click', deleteNode);
+            document.getElementById('importFile').addEventListener('change', importMindmap);
+            document.getElementById('generateBtnHeader').addEventListener('click', () => generateMindmap('header'));
+            
+            // AI input enter key
+            document.getElementById('aiPromptHeader').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    generateMindmap('header');
+                }
+            });
+            
+            // Overlay click to close sidebars
+            document.getElementById('sidebarOverlay').addEventListener('click', closeSidebars);
+            
+            // Sidebar interaction tracking
+            const sidebar = document.getElementById('sidebar');
+            const usageSidebar = document.getElementById('usageSidebar');
+            
+            [sidebar, usageSidebar].forEach(element => {
+                element.addEventListener('mouseenter', () => {
+                    isInteractingWithSidebar = true;
+                });
+                element.addEventListener('mouseleave', () => {
+                    isInteractingWithSidebar = false;
+                });
+            });
+            
+            // Header interaction tracking
+            const header = document.querySelector('.header');
+            header.addEventListener('mouseenter', () => {
+                isInteractingWithSidebar = true;
+            });
+            header.addEventListener('mouseleave', () => {
+                isInteractingWithSidebar = false;
+            });
+            
+            // Sidebar input events
+            document.getElementById('nodeText').addEventListener('input', (e) => {
+                if (selectedNode) {
+                    selectedNode.text = e.target.value;
+                }
+            });
+            
+            document.getElementById('nodeDescription').addEventListener('input', (e) => {
+                if (selectedNode) {
+                    selectedNode.description = e.target.value;
+                }
+            });
+            
+            document.getElementById('sizeSlider').addEventListener('input', (e) => {
+                if (selectedNode) {
+                    const newSize = parseInt(e.target.value);
+                    selectedNode.size = newSize;
+                    selectedNode.targetSize = newSize;
+                    document.getElementById('sizeValue').textContent = newSize;
+                }
+            });
+            
+            document.getElementById('borderWidthSlider').addEventListener('input', (e) => {
+                if (selectedNode) {
+                    const newBorderWidth = parseInt(e.target.value);
+                    selectedNode.borderWidth = newBorderWidth;
+                    document.getElementById('borderWidthValue').textContent = newBorderWidth;
+                }
+            });
+            
+            // Color picker events
+            document.querySelectorAll('.color-option').forEach(el => {
+                el.addEventListener('click', () => {
+                    if (selectedNode) {
+                        selectedNode.borderColor = el.dataset.color;
+                        updateSidebar();
+                    }
+                });
+            });
+            
+            // Shape picker events
+            document.querySelectorAll('.shape-option').forEach(el => {
+                el.addEventListener('click', () => {
+                    if (selectedNode) {
+                        selectedNode.shape = el.dataset.shape;
+                        updateSidebar();
+                    }
+                });
+            });
+        }
+
+        function windowResized() {
+            resizeCanvas(windowWidth, windowHeight - 60);
+        }
+    </script>
+
+
+</body></html>
