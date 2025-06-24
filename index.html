@@ -1,15 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta http-equiv="Content-Security-Policy" content="
-        default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com https://text.pollinations.ai;
-        connect-src 'self' https://text.pollinations.ai https://image.pollinations.ai;
-        frame-src 'self' https://www.youtube.com https://trytako.com;
-        child-src 'self';
-        manifest-src 'self';
-        worker-src 'self';
-        upgrade-insecure-requests;
-        block-all-mixed-content;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mindspark</title>
@@ -62,7 +54,7 @@
 
         .ai-input-header {
             flex: 1;
-            max-width: calc(100vw - 480px); /* Adaptive width: total width minus logo, buttons, gaps, and padding */
+            max-width: calc(100vw - 560px); /* Adjusted for animation button */
             min-width: 200px;
             padding: 8px 12px;
             border: 1px solid #555;
@@ -127,6 +119,56 @@
             border-color: #ff8c00;
         }
 
+        .animate-btn {
+            background: #9b59b6;
+            color: white;
+            border-color: #9b59b6;
+            min-width: 80px;
+            position: relative;
+        }
+
+        .animate-btn:hover {
+            background: #8e44ad;
+            border-color: #8e44ad;
+        }
+
+        .animate-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: #3a3a3a;
+            border: 1px solid #555;
+            border-radius: 6px;
+            margin-top: 2px;
+            min-width: 120px;
+            display: none;
+            z-index: 1001;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .animate-dropdown.visible {
+            display: block;
+        }
+
+        .animate-option {
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.2s ease;
+        }
+
+        .animate-option:hover {
+            background: #4a4a4a;
+        }
+
+        .animate-option:first-child {
+            border-radius: 6px 6px 0 0;
+        }
+
+        .animate-option:last-child {
+            border-radius: 0 0 6px 6px;
+        }
+
         .loading-indicator {
             color: #ffa500;
             font-size: 12px;
@@ -185,7 +227,7 @@
         }
 
         .sidebar-section {
-            margin-bottom: 28px;
+            margin-bottom: 20px;
         }
 
         .sidebar-section h4 {
@@ -518,13 +560,13 @@
         /* Responsive Design */
         @media (max-width: 1200px) {
             .ai-input-header {
-                max-width: calc(100vw - 420px);
+                max-width: calc(100vw - 500px);
             }
         }
 
         @media (max-width: 1024px) {
             .ai-input-header {
-                max-width: calc(100vw - 380px);
+                max-width: calc(100vw - 460px);
                 min-width: 150px;
                 font-size: 12px;
             }
@@ -534,7 +576,7 @@
                 font-size: 11px;
             }
             
-            .generate-btn {
+            .generate-btn, .animate-btn {
                 min-width: 70px;
             }
         }
@@ -575,7 +617,7 @@
                 font-size: 11px;
             }
             
-            .generate-btn {
+            .generate-btn, .animate-btn {
                 min-width: 60px;
             }
             
@@ -614,7 +656,7 @@
                 font-size: 10px;
             }
             
-            .generate-btn {
+            .generate-btn, .animate-btn {
                 min-width: 50px;
             }
             
@@ -635,6 +677,14 @@
         </div>
         
         <div class="controls">
+            <div style="position: relative;">
+                <button class="btn animate-btn" id="animateBtn">Animate</button>
+                <div class="animate-dropdown" id="animateDropdown">
+                    <div class="animate-option" data-mode="dfs">Depth First</div>
+                    <div class="animate-option" data-mode="bfs">Breadth First</div>
+                    <div class="animate-option" data-mode="random">Random Order</div>
+                </div>
+            </div>
             <button class="btn" id="addNodeBtn">Add</button>
             <button class="btn" id="propertiesBtn">Props</button>
             <button class="btn" id="importBtn">Import</button>
@@ -656,7 +706,7 @@
     <!-- Properties Sidebar -->
     <div class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <h3>⚙️ Node Properties</h3>
+            <h3>Properties</h3>
         </div>
         <div class="sidebar-content">
             <div class="sidebar-section">
@@ -727,7 +777,7 @@
     <!-- Usage Sidebar -->
     <div class="usage-sidebar" id="usageSidebar">
         <div class="sidebar-header">
-            <h3>📖 Usage Guide</h3>
+            <h3>Usage Guide</h3>
         </div>
         <div class="usage-content">
             <div class="usage-section">
@@ -793,23 +843,27 @@
             </div>
 
             <div class="usage-section">
-                <h4>✨ Features</h4>
-                <ul class="feature-list">
-                    <li>Customize nodes with colors, shapes, and sizes</li>
-                    <li>Save and load mindmaps as JSON files</li>
-                    <li>Generate mindmaps using AI prompts</li>
-                    <li>Interactive zoom and pan functionality</li>
-                    <li>Real-time node editing and organization</li>
-                    <li>Responsive design for all devices</li>
+                <h4>✨ Animation</h4>
+                <ul class="controls-list">
+                    <li>
+                        <span class="control-icon">🎯</span>
+                        <span class="control-key">Depth First</span>
+                        <span class="control-desc">Traverse branches completely</span>
+                    </li>
+                    <li>
+                        <span class="control-icon">🌊</span>
+                        <span class="control-key">Breadth First</span>
+                        <span class="control-desc">Traverse level by level</span>
+                    </li>
+                    <li>
+                        <span class="control-icon">🎲</span>
+                        <span class="control-key">Random Order</span>
+                        <span class="control-desc">Random sequence</span>
+                    </li>
                 </ul>
             </div>
 
             <div class="usage-section">
-                <h4>ℹ️ About</h4>
-                <p style="margin-bottom: 15px; color: #ccc; line-height: 1.5;">
-                    Mindspark is a powerful, interactive mindmapping tool that helps you visualize and organize your ideas. Create beautiful, connected diagrams that represent your thoughts and concepts with ease.
-                </p>
-                
                 <a href="https://aeromechanic.fun" target="_blank" class="website-link">
                     🌐 Visit aeromechanic.fun
                 </a>
@@ -831,6 +885,14 @@
         let editInput = '';
         let animationTime = 0;
         let isInteractingWithSidebar = false;
+
+        // Animation variables
+        let isAnimating = false;
+        let animationQueue = [];
+        let currentAnimationIndex = 0;
+        let animationStartTime = 0;
+        let animationDuration = 1000; // 1 second per node
+        let animatedNodes = new Set();
 
         // Node colors and settings
         const colors = {
@@ -871,6 +933,9 @@
             
             animationTime += 0.02;
             
+            // Update animation
+            updateAnimation();
+            
             drawConnections();
             drawNodes();
             
@@ -895,8 +960,65 @@
                 parent: null,
                 targetX: x,
                 targetY: y,
-                targetSize: isRoot ? 80 : 60
+                targetSize: isRoot ? 80 : 60,
+                animationGlow: 0,
+                animationPulse: 0
             };
+        }
+
+        function updateAnimation() {
+            if (!isAnimating || animationQueue.length === 0) return;
+
+            let currentTime = millis();
+            let elapsedTime = currentTime - animationStartTime;
+
+            if (elapsedTime >= animationDuration) {
+                // Move to next node in animation
+                currentAnimationIndex++;
+                
+                if (currentAnimationIndex >= animationQueue.length) {
+                    // Animation complete
+                    isAnimating = false;
+                    animatedNodes.clear();
+                    // Reset all animation effects
+                    nodes.forEach(node => {
+                        node.animationGlow = 0;
+                        node.animationPulse = 0;
+                    });
+                    return;
+                }
+                
+                animationStartTime = currentTime;
+                elapsedTime = 0;
+            }
+
+            // Update animation effects for current node
+            let currentNodeId = animationQueue[currentAnimationIndex];
+            let currentNode = nodes.find(n => n.id === currentNodeId);
+            
+            if (currentNode) {
+                let progress = elapsedTime / animationDuration;
+                
+                // Glow effect (fade in and stay)
+                currentNode.animationGlow = min(progress * 2, 1);
+                
+                // Pulse effect (oscillating)
+                currentNode.animationPulse = sin(progress * PI * 6) * 0.3 * currentNode.animationGlow;
+                
+                // Add to animated nodes set
+                animatedNodes.add(currentNodeId);
+            }
+
+            // Fade out previous nodes' glow
+            animatedNodes.forEach(nodeId => {
+                if (nodeId !== currentNodeId) {
+                    let node = nodes.find(n => n.id === nodeId);
+                    if (node) {
+                        node.animationGlow = max(node.animationGlow - 0.02, 0);
+                        node.animationPulse = 0;
+                    }
+                }
+            });
         }
 
         function drawNodes() {
@@ -907,7 +1029,9 @@
                 
                 let isSelected = selectedNode && selectedNode.id === node.id;
                 let isEditing = editingNode && editingNode.id === node.id;
+                let isAnimated = node.animationGlow > 0;
                 
+                // Selection glow
                 if (isSelected) {
                     for(let r = node.size + 20; r > node.size; r -= 5) {
                         let alpha = map(r, node.size, node.size + 20, 255, 0);
@@ -918,6 +1042,20 @@
                     }
                 }
                 
+                // Animation glow effect
+                if (isAnimated) {
+                    for(let r = node.size + 30; r > node.size; r -= 3) {
+                        let alpha = map(r, node.size, node.size + 30, node.animationGlow * 255, 0);
+                        let glowColor = color('#ffa500'); // Golden glow for animation
+                        fill(red(glowColor), green(glowColor), blue(glowColor), alpha * 0.5);
+                        noStroke();
+                        drawShape(node.x, node.y, r, node.shape);
+                    }
+                    
+                    // Particle effect
+                    drawParticles(node);
+                }
+                
                 fill(colors.nodeBackground);
                 
                 if (isEditing) {
@@ -926,6 +1064,9 @@
                 } else if (isSelected) {
                     stroke(node.borderColor);
                     strokeWeight(node.borderWidth + 1);
+                } else if (isAnimated) {
+                    stroke('#ffa500');
+                    strokeWeight(node.borderWidth + 2);
                 } else {
                     stroke(node.borderColor);
                     strokeWeight(node.borderWidth);
@@ -934,6 +1075,11 @@
                 let size = node.size;
                 if (node.isRoot) {
                     size += sin(animationTime * 2) * 2;
+                }
+                
+                // Add pulse effect for animated nodes
+                if (isAnimated) {
+                    size += node.animationPulse * 20;
                 }
                 
                 drawShape(node.x, node.y, size, node.shape);
@@ -968,6 +1114,22 @@
                     });
                 }
             });
+        }
+
+        function drawParticles(node) {
+            if (node.animationGlow < 0.5) return;
+            
+            let particleCount = 8;
+            for (let i = 0; i < particleCount; i++) {
+                let angle = (i / particleCount) * TWO_PI + animationTime * 2;
+                let radius = node.size * 0.7 + sin(animationTime * 3 + i) * 10;
+                let x = node.x + cos(angle) * radius;
+                let y = node.y + sin(angle) * radius;
+                
+                fill(255, 200, 0, node.animationGlow * 150);
+                noStroke();
+                ellipse(x, y, 4);
+            }
         }
 
         function drawShape(x, y, size, shape) {
@@ -1019,6 +1181,15 @@
                         
                         let offset = sin(animationTime + node.id * 0.5) * 2;
                         
+                        // Highlight connection if both nodes are animated
+                        if (parent.animationGlow > 0 && node.animationGlow > 0) {
+                            stroke(255, 200, 0, (parent.animationGlow + node.animationGlow) * 127);
+                            strokeWeight(4);
+                        } else {
+                            stroke(colors.connection);
+                            strokeWeight(2);
+                        }
+                        
                         bezier(
                             parent.x, parent.y,
                             parent.x + dx * 0.3, parent.y + offset,
@@ -1036,6 +1207,109 @@
             textAlign(RIGHT, BOTTOM);
             textSize(12);
             text(`Zoom: ${(camera.zoom * 100).toFixed(0)}%`, width - 20, height - 20);
+            
+            // Animation status indicator
+            if (isAnimating) {
+                textAlign(LEFT, BOTTOM);
+                fill(255, 200, 0, 200);
+                text(`Animating... ${currentAnimationIndex + 1}/${animationQueue.length}`, 20, height - 20);
+            }
+        }
+
+        // Animation functions
+        function startAnimation(mode) {
+            if (isAnimating) return;
+            
+            // Reset all animation effects
+            nodes.forEach(node => {
+                node.animationGlow = 0;
+                node.animationPulse = 0;
+            });
+            
+            // Generate animation sequence
+            animationQueue = generateAnimationSequence(mode);
+            
+            if (animationQueue.length === 0) return;
+            
+            isAnimating = true;
+            currentAnimationIndex = 0;
+            animationStartTime = millis();
+            animatedNodes.clear();
+        }
+
+        function generateAnimationSequence(mode) {
+            let rootNode = nodes.find(n => n.isRoot);
+            if (!rootNode) return [];
+            
+            switch (mode) {
+                case 'dfs':
+                    return depthFirstTraversal(rootNode.id);
+                case 'bfs':
+                    return breadthFirstTraversal(rootNode.id);
+                case 'random':
+                    return randomTraversal(rootNode.id);
+                default:
+                    return [];
+            }
+        }
+
+        function depthFirstTraversal(startNodeId) {
+            let visited = new Set();
+            let sequence = [];
+            
+            function dfs(nodeId) {
+                if (visited.has(nodeId)) return;
+                visited.add(nodeId);
+                sequence.push(nodeId);
+                
+                let node = nodes.find(n => n.id === nodeId);
+                if (node && node.children) {
+                    node.children.forEach(childId => dfs(childId));
+                }
+            }
+            
+            dfs(startNodeId);
+            return sequence;
+        }
+
+        function breadthFirstTraversal(startNodeId) {
+            let visited = new Set();
+            let sequence = [];
+            let queue = [startNodeId];
+            
+            while (queue.length > 0) {
+                let nodeId = queue.shift();
+                if (visited.has(nodeId)) continue;
+                
+                visited.add(nodeId);
+                sequence.push(nodeId);
+                
+                let node = nodes.find(n => n.id === nodeId);
+                if (node && node.children) {
+                    node.children.forEach(childId => {
+                        if (!visited.has(childId)) {
+                            queue.push(childId);
+                        }
+                    });
+                }
+            }
+            
+            return sequence;
+        }
+
+        function randomTraversal(startNodeId) {
+            let allNodes = nodes.map(n => n.id);
+            // Always start with root
+            let sequence = [startNodeId];
+            let remaining = allNodes.filter(id => id !== startNodeId);
+            
+            // Shuffle remaining nodes
+            for (let i = remaining.length - 1; i > 0; i--) {
+                let j = Math.floor(Math.random() * (i + 1));
+                [remaining[i], remaining[j]] = [remaining[j], remaining[i]];
+            }
+            
+            return sequence.concat(remaining);
         }
 
         function mousePressed() {
@@ -1226,6 +1500,11 @@
             }
         }
 
+        function toggleAnimateDropdown() {
+            const dropdown = document.getElementById('animateDropdown');
+            dropdown.classList.toggle('visible');
+        }
+
         function closeSidebars() {
             sidebarOpen = false;
             usageSidebarOpen = false;
@@ -1290,7 +1569,9 @@
                             targetSize: node.size || 60,
                             borderColor: node.borderColor || '#4ecdc4',
                             shape: node.shape || 'circle',
-                            borderWidth: node.borderWidth || 2
+                            borderWidth: node.borderWidth || 2,
+                            animationGlow: 0,
+                            animationPulse: 0
                         }));
                         
                         nodeIdCounter = Math.max(...nodes.map(n => n.id)) + 1;
@@ -1458,6 +1739,25 @@
             document.getElementById('deleteNodeBtn').addEventListener('click', deleteNode);
             document.getElementById('importFile').addEventListener('change', importMindmap);
             document.getElementById('generateBtnHeader').addEventListener('click', () => generateMindmap('header'));
+            
+            // Animation button and dropdown
+            document.getElementById('animateBtn').addEventListener('click', toggleAnimateDropdown);
+            
+            // Animation options
+            document.querySelectorAll('.animate-option').forEach(option => {
+                option.addEventListener('click', (e) => {
+                    const mode = e.target.dataset.mode;
+                    startAnimation(mode);
+                    document.getElementById('animateDropdown').classList.remove('visible');
+                });
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#animateBtn') && !e.target.closest('#animateDropdown')) {
+                    document.getElementById('animateDropdown').classList.remove('visible');
+                }
+            });
             
             // AI input enter key
             document.getElementById('aiPromptHeader').addEventListener('keypress', (e) => {
