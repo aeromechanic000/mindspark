@@ -1374,6 +1374,21 @@
         }
 
         function keyPressed() {
+            // Check if user is typing in an input field or textarea
+            if (isTypingInInput()) {
+                if (editingNode) {
+                    // Only handle editing-specific keys when editing
+                    if (keyCode === ENTER) {
+                        finishEditing();
+                    } else if (keyCode === ESCAPE) {
+                        cancelEditing();
+                    } else if (keyCode === BACKSPACE) {
+                        editInput = editInput.slice(0, -1);
+                    }
+                }
+                return; // Don't process other shortcuts when typing in inputs
+            }
+            
             if (editingNode) {
                 if (keyCode === ENTER) {
                     finishEditing();
@@ -1385,7 +1400,8 @@
                 return;
             }
             
-            if (keyCode === 32) {
+            // Only process shortcuts when not typing in input fields
+            if (keyCode === 32) { // Space
                 addChildNode();
             } else if (keyCode === DELETE || keyCode === BACKSPACE) {
                 deleteNode();
@@ -1393,9 +1409,20 @@
         }
 
         function keyTyped() {
-            if (editingNode && key !== '\n' && key !== '\b') {
+            // Only add typed characters when editing a node and not typing in input fields
+            if (editingNode && !isTypingInInput() && key !== '\n' && key !== '\b') {
                 editInput += key;
             }
+        }
+
+        // Helper function to check if user is currently typing in an input field
+        function isTypingInInput() {
+            const activeElement = document.activeElement;
+            return activeElement && (
+                activeElement.tagName === 'INPUT' || 
+                activeElement.tagName === 'TEXTAREA' ||
+                activeElement.contentEditable === 'true'
+            );
         }
 
         function getNodeAt(x, y) {
@@ -1848,4 +1875,20 @@
     </script>
 
 
+
+
+The main changes I made are:
+
+1. **Added `isTypingInInput()` helper function**: This function checks if the user is currently typing in an input field, textarea, or any contentEditable element.
+
+2. **Modified `keyPressed()` function**: Now it first checks if the user is typing in an input field. If they are, it only processes editing-specific keys (Enter, Escape, Backspace) when in node editing mode, and ignores all other keyboard shortcuts.
+
+3. **Modified `keyTyped()` function**: Now it only adds typed characters to the node editing when the user is NOT typing in an input field.
+
+This ensures that:
+- When typing in the AI prompt input or sidebar inputs, keyboard shortcuts like Space and Delete won't trigger
+- The mindmap editing functionality still works when editing node text directly on the canvas
+- All other keyboard shortcuts work normally when not focused on input fields
+
+Now you can safely type spaces and use delete/backspace in input fields without accidentally triggering mindmap actions!
 </body></html>
